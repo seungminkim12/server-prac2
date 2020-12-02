@@ -1,38 +1,90 @@
-const express = require('express');
+const express = require("express");
 const app = express();
 const port = 5000;
-const bodyParser = require('body-parser');
+const bodyParser = require("body-parser");
 
-const config = require('./config/key')
+const cookieParser = require("cookie-parser");
 
-const {User} = require('./models/Users');
+const config = require("./config/key");
+
+const { auth } = require("./middleware/auth");
+const { User } = require("./models/User");
 
 //application/x-www-form-urlencoded 분석
-app.use(bodyParser.urlencoded({extended:true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
 //application/json 분석
 app.use(bodyParser.json());
 
-const mongoose = require('mongoose');
-mongoose.connect(config.mongoURI,{
-    useNewUrlParser:true,useUnifiedTopology:true,useCreateIndex:true,useFindAndModify:false    
-}).then(() => console.log("MongoDB Connected"))
-    .catch(err => console.log(err))
+app.use(cookieParser());
 
-app.get('/', (req,res) => res.send('hello world! 월드' ))
+const mongoose = require("mongoose");
+mongoose
+  .connect(config.mongoURI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+    useFindAndModify: false,
+  })
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.log(err));
 
-app.post('/register',(req,res) => {
-    //회원 가입 할때 필요한 정보들을 Client 에서 가져오면 DB에 저장
+app.get("/", (req, res) => res.send("hello world! 월드"));
 
-    //req.body -> json 형식으로 데이터 받아옴 (body.parser가 해줌)
-    const user = new User(req.body);
+app.post("/api/users/register", (req, res) => {
+  //회원 가입 할때 필요한 정보들을 Client 에서 가져오면 DB에 저장
 
-    user.save((err,userInfo) => {
-        if(err) return res.json({success:false,err})
-        return res.status(200).json({
-            success:true
-        })
-    })
-})
+  //req.body -> json 형식으로 데이터 받아옴 (body.parser가 해줌)
+  const user = new User(req.body);
 
-app.listen(port,() => console.log(`Example app listening on port ${port}!`))
+  user.save((err, userInfo) => {
+    if (err) return res.json({ success: false, err });
+    return res.status(200).json({
+      success: true,
+    });
+  });
+});
+
+app.post("/api/users/login", (req, res) => {
+  //요청된 이메일 DB에 있는지 확인
+  //mongoDB에서 제공하는 method
+  User.findOne({ email: req.body.email }, (err, user) => {
+    console.log(req.body.email);
+    if (!user) {
+      return res.json({
+        loginSuccess: false,
+        message: "해당 되는 이메일이 없습니다.",
+      });
+    }
+    //요청된 이메일 패스워드 맞는지 확인
+    user.comparePassword(req.body.password, (err, isMatch) => {
+      if (!isMatch)
+        return res.json({
+          loginSuccess: false,
+          message: "비밀번호가 맞지않습니다.",
+        });
+
+      //비밀번호 맞으면 토큰 생성
+      user.generateToken((err, user) => {
+        if (err) return res.status(400).send(err);
+
+        //토큰 생성 후 저장 쿠키에
+        res
+          .cookie("x_auth", user.token)
+          .status(200)
+          .json({ loginSuccess: true, userId: user.email });
+      });
+    });
+  });
+});
+
+//auth - middleware 콜백 가기전 중간에서 해줌
+app.get("/api/users/auth", auth, (req, res) => {
+  // 미들웨어 넘어서 여기까지 오면 auth true라는 것
+  res.status(200).json({
+    ...req.user,
+    isAuth: true,
+  });
+});
+
+app.listen(port, () => console.log(`Example app listening on port ${port}!`));
