@@ -1,4 +1,4 @@
-const { User } = require("../models/User");
+const { User } = require("../models/user");
 
 let auth = (req, res, next) => {
   //인증 처리 하는곳
@@ -16,9 +16,6 @@ let auth = (req, res, next) => {
     //middleware 에서 다음으로 넘어갈수있게
     next();
   });
-  //유저 있으면 인증OK
-
-  //없으면 NO
 };
 
 module.exports = { auth };

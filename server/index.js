@@ -8,7 +8,7 @@ const cookieParser = require("cookie-parser");
 const config = require("./config/key");
 
 const { auth } = require("./middleware/auth");
-const { User } = require("./models/User");
+const { User } = require("./models/user");
 
 //application/x-www-form-urlencoded 분석
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -18,6 +18,7 @@ app.use(bodyParser.json());
 
 app.use(cookieParser());
 
+//DB연동
 const mongoose = require("mongoose");
 mongoose
   .connect(config.mongoURI, {
@@ -31,6 +32,7 @@ mongoose
 
 app.get("/", (req, res) => res.send("hello world! 월드"));
 
+//회원가입
 app.post("/api/users/register", (req, res) => {
   //회원 가입 할때 필요한 정보들을 Client 에서 가져오면 DB에 저장
 
@@ -45,6 +47,7 @@ app.post("/api/users/register", (req, res) => {
   });
 });
 
+//로그인
 app.post("/api/users/login", (req, res) => {
   //요청된 이메일 DB에 있는지 확인
   //mongoDB에서 제공하는 method
@@ -78,12 +81,27 @@ app.post("/api/users/login", (req, res) => {
   });
 });
 
+//인증
 //auth - middleware 콜백 가기전 중간에서 해줌
 app.get("/api/users/auth", auth, (req, res) => {
   // 미들웨어 넘어서 여기까지 오면 auth true라는 것
   res.status(200).json({
     ...req.user,
     isAuth: true,
+  });
+});
+
+//logout
+app.get("/api/users/logout", auth, (req, res) => {
+  User.findOneAndUpdate({ _id: req.user._id }, { token: "" }, (err, user) => {
+    console.log("req.body.id : ", req.user._id);
+    if (err) return res.json({ success: false, err });
+    console.log("user : ", user);
+    return res.status(200).send({
+      success: true,
+      email: user.email,
+      token: user.token,
+    });
   });
 });
 
