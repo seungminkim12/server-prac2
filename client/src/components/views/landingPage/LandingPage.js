@@ -1,10 +1,20 @@
-import React, { useEffect } from "react";
 import axios from "axios";
+import React, { useEffect } from "react";
 
-function LandingPage() {
+function LandingPage(props) {
   useEffect(() => {
     axios.get("/api/hello").then((res) => console.log(res.data));
   }, []);
+
+  const onLogoutHandler = () => {
+    axios.get("/api/users/logout").then((response) => {
+      if (response.data.logoutSuccess) {
+        props.history.push("/login");
+      } else {
+        alert("Logout Error");
+      }
+    });
+  };
 
   return (
     <div
@@ -17,6 +27,8 @@ function LandingPage() {
       }}
     >
       <h2>시작페이지</h2>
+
+      <button onClick={onLogoutHandler}>Logout</button>
     </div>
   );
 }

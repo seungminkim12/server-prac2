@@ -74,7 +74,6 @@ userSchema.methods.generateToken = function (cb) {
 
 userSchema.statics.findByToken = function (token, cb) {
   var user = this;
-
   //token decode
   jwt.verify(token, "secretToken", function (err, decoded) {
     //find by userId , DB's token and cookie's token 비교

@@ -46,7 +46,7 @@ app.post("/api/users/register", (req, res) => {
   user.save((err, userInfo) => {
     if (err) return res.json({ success: false, err });
     return res.status(200).json({
-      success: true,
+      registerSuccess: true,
     });
   });
 });
@@ -97,12 +97,11 @@ app.get("/api/users/auth", auth, (req, res) => {
 
 //logout
 app.get("/api/users/logout", auth, (req, res) => {
+  console.log("Log out IN");
   User.findOneAndUpdate({ _id: req.user._id }, { token: "" }, (err, user) => {
-    console.log("req.body.id : ", req.user._id);
-    if (err) return res.json({ success: false, err });
-    console.log("user : ", user);
-    return res.status(200).send({
-      success: true,
+    if (err) return res.json({ logoutSuccess: false, err });
+    return res.clearCookie("x_auth").status(200).send({
+      logoutSuccess: true,
       email: user.email,
       token: user.token,
     });

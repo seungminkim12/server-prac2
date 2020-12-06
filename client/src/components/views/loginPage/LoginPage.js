@@ -12,7 +12,7 @@ function LoginPage(props) {
     const {
       target: { value },
     } = event;
-    if (event.target.type == "email") {
+    if (event.target.type === "email") {
       setEmail(value);
     } else {
       setPassword(value);
