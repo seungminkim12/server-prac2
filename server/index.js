@@ -92,6 +92,7 @@ app.get("/api/users/auth", auth, (req, res) => {
   res.status(200).json({
     ...req.user,
     isAuth: true,
+    isAdmin: req.user.role === 0 ? false : true,
   });
 });
 
